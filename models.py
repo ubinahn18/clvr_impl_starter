@@ -70,20 +70,12 @@ class PredictorLSTM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, future_steps, batch_first=True):
         super(PredictorLSTM, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, 1)  # Predict single output (e.g., reward)
 
     def forward(self, x):
         outputs = []
         h, (hidden, cell) = self.lstm(x)  # Encode input sequence
-        
-        # Use the last hidden state to predict future steps
-        last_output = h[:, -1, :]  # Get last time step's output
-        for _ in range(future_steps):
-            prediction = self.fc(last_output)
-            outputs.append(prediction)
-            last_output = prediction  # Feed prediction back as input
     
-        return torch.cat(outputs, dim=1)
+        return h
 
 
 class RewardPredModel(nn.Module):
@@ -102,6 +94,7 @@ class RewardPredModel(nn.Module):
 
     def forward(self, img_seq):
         pred_inputs = []
+        rew_outputs = []
         i = 0
         for img in img_seq:
             encoded_img = self.encoders[i](img)
@@ -110,7 +103,9 @@ class RewardPredModel(nn.Module):
             i += 1
         pred_inputs = torch.stack(pred_inputs, dim=0)
         pred_outputs = self.PredictorLSTM.forward(pred_inputs)
-        return torch.cat(pred_outputs, dim=1)
+        for i in range(output_steps):
+            rew_outputs.append(self.RewardHeads[i](pred_outputs))
+        return torch.tensor(rew_outputs)
 
 
 
