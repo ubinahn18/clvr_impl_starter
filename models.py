@@ -102,8 +102,8 @@ class RewardPredModel(nn.Module):
 
     def forward(self, img_seq):
         pred_inputs = []
+        i = 0
         for img in img_seq:
-            i = 0
             encoded_img = self.encoders[i](img)
             input_feat = self.MLP(encoded_img)
             pred_inputs.append(input_feat)
