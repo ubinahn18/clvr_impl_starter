@@ -103,9 +103,11 @@ class RewardPredModel(nn.Module):
     def forward(self, img_seq):
         pred_inputs = []
         for img in img_seq:
+            i = 0
             encoded_img = self.encoders[i](img)
             input_feat = self.MLP(encoded_img)
             pred_inputs.append(input_feat)
+            i += 1
         pred_inputs = torch.stack(pred_inputs, dim=0)
         pred_outputs = self.PredictorLSTM(pred_inputs.unsqueeze(0))
         return torch.cat(pred_outputs, dim=1)
