@@ -109,7 +109,7 @@ class RewardPredModel(nn.Module):
             pred_inputs.append(input_feat)
             i += 1
         pred_inputs = torch.stack(pred_inputs, dim=0)
-        pred_outputs = self.PredictorLSTM(pred_inputs.unsqueeze(0))
+        pred_outputs = self.PredictorLSTM.forward(pred_inputs)
         return torch.cat(pred_outputs, dim=1)
 
 
