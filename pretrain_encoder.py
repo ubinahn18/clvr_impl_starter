@@ -53,14 +53,16 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
         samples = []
         targets = []
 
-        # Collect samples from multiple trajectories
         for _ in range(num_trajectories):
             states, rewards = rollout_trajectory(env, num_steps)
-            for i in range(num_steps - future_steps):
+            i = 0
+            while i + input_steps + future_steps <= len(states):
                 img_seq = torch.tensor(states[i:i + input_steps], dtype=torch.float32) 
-                reward_sum = torch.tensor(rewards[i:i + future_steps].sum(), dtype=torch.float32) 
+                reward_sum = torch.tensor(rewards[i + input_steps : i + input_steps + future_steps].sum(), dtype=torch.float32) 
                 samples.append(img_seq.unsqueeze(0))  # Add batch dimension
                 targets.append(reward_sum.unsqueeze(0))
+                i += 1  # Increment to move to the next sample
+
 
         # Shuffle data
         samples = torch.cat(samples, dim=0)  # Shape: (total_samples, input_steps, H, W)
