@@ -93,21 +93,32 @@ class RewardPredModel(nn.Module):
         ])
 
     def forward(self, img_seq):
+        # img_seq: (batch_size, input_steps, C, H, W)
+        batch_size, input_steps, C, H, W = img_seq.shape
         pred_inputs = []
-        rew_outputs = []
-        i = 0
-        for img in img_seq:
-            encoded_img = self.encoders[i](img)
-            input_feat = self.MLP(encoded_img)
+        
+        # Encode each image in the sequence for all batches
+        for i in range(input_steps):
+            img_batch = img_seq[:, i, :, :, :]  # (batch_size, C, H, W)
+            encoded_img = self.encoders[i](img_batch)  # (batch_size, feature_dim)
+            input_feat = self.MLP(encoded_img)  # (batch_size, feature_dim)
             pred_inputs.append(input_feat)
-            i += 1
-        pred_inputs = torch.stack(pred_inputs, dim=0)
-        pred_outputs = self.PredictorLSTM.forward(pred_inputs)
-        for i in range(output_steps):
-            rew_outputs.append(self.RewardHeads[i](pred_outputs))
-        return torch.tensor(rew_outputs)
-
-
+        
+        # Stack encoded features along the sequence dimension
+        pred_inputs = torch.stack(pred_inputs, dim=1)  # (batch_size, input_steps, feature_dim)
+        
+        # Pass through LSTM
+        pred_outputs = self.PredictorLSTM(pred_inputs)  # (batch_size, future_steps, hidden_size)
+        
+        # Predict rewards for each future step
+        rew_outputs = []
+        for i in range(self.output_steps):
+            rew_outputs.append(self.RewardHeads[i](pred_outputs[:, i, :]))  # (batch_size, 1)
+        
+        # Stack rewards across future steps
+        rew_outputs = torch.cat(rew_outputs, dim=1)  # (batch_size, output_steps)
+        
+        return rew_outputs
 
 
 
