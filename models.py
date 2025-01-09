@@ -67,7 +67,7 @@ def get_feature_dim(img_size):
 
 
 class PredictorLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, future_steps):
+    def __init__(self, input_size, hidden_size, num_layers, future_steps, batch_first=True):
         super(PredictorLSTM, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, 1)  # Predict single output (e.g., reward)
