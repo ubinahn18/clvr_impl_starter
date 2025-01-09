@@ -12,3 +12,29 @@ from sprites_env.envs.sprites import *
 env = SpritesEnv()
 
 
+def rollout_trajectory(env, num_steps = 50):
+ 
+    states = []
+    rewards = []
+
+    state = env.reset()
+    for _ in range(num_steps):
+        action = env.action_space.sample()
+        next_state, reward, done, _ = env.step(action)
+
+        states.append(next_state)
+        rewards.append(reward)
+
+        if done:
+            break
+
+    return np.array(states), np.array(rewards)
+
+
+
+
+
+
+
+
+
