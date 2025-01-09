@@ -87,29 +87,28 @@ class PredictorLSTM(nn.Module):
 
 
 class RewardPredModel(nn.Module):
-    def __init__(self, input_channels = 3, img_size, input_steps, output_steps):
+    def __init__(self, input_channels=3, img_size=64, input_steps=10, output_steps=20):
         super(RewardPredModel, self).__init__()
-        self.encoders = []
-        for i in range(input_steps):
-            self.encoders.append(CNNEncoder(input_channels = 3, img_size, initial_channels=4))
+        self.encoders = nn.ModuleList([
+            CNNEncoder(input_channels=3, img_size=img_size, initial_channels=4) 
+            for _ in range(input_steps)
+        ])
         self.feature_dim = get_feature_dim(img_size)
-        self.MLP = MLP(feature_dim,64)        
-        self.PredictorLSTM = PredictorLSTM(input_size, hidden_size = 20, num_layers = 1, future_steps = 20, batch_first=True)
-        self.RewardHeads = []
-        for i in range(future_steps):
-            self.RewardHeads.append(MLP(hidden_size = 20, 1))
+        self.MLP = MLP(self.feature_dim, 64)        
+        self.PredictorLSTM = PredictorLSTM(64, hidden_size=20, num_layers=1, future_steps=20, batch_first=True)
+        self.RewardHeads = nn.ModuleList([
+            MLP(20, 1) for _ in range(output_steps)
+        ])
 
     def forward(self, img_seq):
-        rewards = np.zeros(output_steps)
         pred_inputs = []
-        for i in range(len(img_seq)):
-            img = img_seq[i]
-            encoded_img = self.encoders[i].forward(img)
-            input_feat = self.MLP.forward(encoded_img)
+        for img in img_seq:
+            encoded_img = self.encoders[i](img)
+            input_feat = self.MLP(encoded_img)
             pred_inputs.append(input_feat)
-        pred_inputs = np.array(pred_inputs).reshape(,self.feature_dim)
-        pred_outputs = self.PredictorLSTM.forward(pred_inputs.unsqueeze[0])
-        return torch.cat(outputs, dim=1)
+        pred_inputs = torch.stack(pred_inputs, dim=0)
+        pred_outputs = self.PredictorLSTM(pred_inputs.unsqueeze(0))
+        return torch.cat(pred_outputs, dim=1)
 
 
 
