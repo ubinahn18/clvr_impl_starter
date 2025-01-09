@@ -95,8 +95,9 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
 
     return losses
 
+if __name__ == "__main__":
 
- data_spec = AttrDict(
+    data_spec = AttrDict(
         resolution=64,
         max_ep_len=40,
         max_speed=0.05,      # total image range [0, 1]
@@ -105,11 +106,13 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
     )
 
 
-env = SpritesEnv()
-model = RewardPredModel(input_channels=3, img_size=64, input_steps=3, output_steps=20)
-train_model(env, model, num_trajectories=50, num_steps=100, input_steps=3, future_steps=20, epochs=10, batch_size=32, learning_rate=0.01)
-torch.save(model.encoders.state_dict(), "encoders.pth")
+    env = SpritesEnv()
+    model = RewardPredModel(input_channels=3, img_size=64, input_steps=3, output_steps=20)
+    train_model(env, model, num_trajectories=50, num_steps=100, input_steps=3, future_steps=20, epochs=10, batch_size=32, learning_rate=0.01)
+    torch.save(model.encoders.state_dict(), "encoders.pth")
 
+
+ 
 
 
 
