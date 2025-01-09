@@ -108,7 +108,7 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
 env = SpritesEnv()
 model = RewardPredModel(input_channels=3, img_size=64, input_steps=3, output_steps=20)
 train_model(env, model, num_trajectories=50, num_steps=100, input_steps=3, future_steps=20, epochs=10, batch_size=32, learning_rate=0.01)
-
+torch.save(model.encoders.state_dict(), "encoders.pth")
 
 
 
