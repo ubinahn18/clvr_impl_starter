@@ -99,7 +99,7 @@ class RewardPredModel(nn.Module):
         self.encoders = []
         for i in range(input_steps):
             self.encoders.append(CNNEncoder(input_channels = 3, img_size, initial_channels=4))
-        feature_dim = get_feature_dim(img_size)
+        self.feature_dim = get_feature_dim(img_size)
         self.MLP = MLP(feature_dim,64)        
         self.PredictorLSTM = PredictorLSTM(input_size, hidden_size = 20, num_layers = 1, future_steps = 20, batch_first=True)
         self.RewardHeads = []
@@ -114,10 +114,12 @@ class RewardPredModel(nn.Module):
             encoded_img = self.encoders[i].forward(img)
             input_feat = self.MLP.forward(encoded_img)
             pred_inputs.append(input_feat)
-        pred_inputs = np.array(pred_inputs)
-        pred_outputs = self.PredictorLSTM.forward(
-        
+        pred_inputs = np.array(pred_inputs).reshape(,self.feature_dim)
+        pred_outputs = self.PredictorLSTM.forward(pred_inputs.unsqueeze[0])
         return torch.cat(outputs, dim=1)
+
+
+
 
 
 
