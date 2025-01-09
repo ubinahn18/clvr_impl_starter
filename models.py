@@ -79,10 +79,10 @@ class PredictorLSTM(nn.Module):
 
 
 class RewardPredModel(nn.Module):
-    def __init__(self, input_channels=3, img_size=64, input_steps=3, output_steps=20):
+    def __init__(self, input_channels=1, img_size=64, input_steps=3, output_steps=20):
         super(RewardPredModel, self).__init__()
         self.encoders = nn.ModuleList([
-            CNNEncoder(input_channels=3, img_size=img_size, initial_channels=4) 
+            CNNEncoder(input_channels=1, img_size=img_size, initial_channels=4) 
             for _ in range(input_steps)
         ])
         self.feature_dim = get_feature_dim(img_size)
@@ -94,12 +94,12 @@ class RewardPredModel(nn.Module):
 
     def forward(self, img_seq):
         # img_seq: (batch_size, input_steps, C, H, W)
-        batch_size, input_steps, C, H, W = img_seq.shape
+        batch_size, input_steps, H, W = img_seq.shape
         pred_inputs = []
         
         # Encode each image in the sequence for all batches
         for i in range(input_steps):
-            img_batch = img_seq[:, i, :, :, :]  # (batch_size, C, H, W)
+            img_batch = img_seq[:, i, :, :]  # (batch_size, C, H, W)
             encoded_img = self.encoders[i](img_batch)  # (batch_size, feature_dim)
             input_feat = self.MLP(encoded_img)  # (batch_size, feature_dim)
             pred_inputs.append(input_feat)
