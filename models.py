@@ -62,7 +62,7 @@ def get_image_channels_and_size(image):
 
 def get_feature_dim(img_size):
     num_layers = int(math.log2(img_size))
-    feature_dim = img_size // (2**num_layers)
+    feature_dim = 2 * (2**num_layers)
     return feature_dim
 
 
@@ -91,22 +91,27 @@ class RewardPredModel(nn.Module):
         self.RewardHeads = nn.ModuleList([
             MLP(20, 1) for _ in range(output_steps)
         ])
+        self.input_steps = input_steps
+        self.output_steps = output_steps
 
     def forward(self, img_seq):
-        # img_seq: (batch_size, input_steps, C, H, W)
-        batch_size, input_steps, H, W = img_seq.shape
+
         pred_inputs = []
         
         # Encode each image in the sequence for all batches
-        for i in range(input_steps):
-            img_batch = img_seq[:, i, :, :]  # (batch_size, C, H, W)
-            encoded_img = self.encoders[i](img_batch)  # (batch_size, feature_dim)
+        for i in range(self.input_steps):
+            img_batch = img_seq[:, :, i, :, :]  # (batch_size, C, H, W)
+            print(img_batch.shape)
+            encoded_img = self.encoders[i](img_batch).squeeze()  # (batch_size, feature_dim)
+            print(encoded_img.shape)
             input_feat = self.MLP(encoded_img)  # (batch_size, feature_dim)
+            print(input_feat.shape)
             pred_inputs.append(input_feat)
         
         # Stack encoded features along the sequence dimension
         pred_inputs = torch.stack(pred_inputs, dim=1)  # (batch_size, input_steps, feature_dim)
-        
+        print(pred_inputs.shape)
+
         # Pass through LSTM
         pred_outputs = self.PredictorLSTM(pred_inputs)  # (batch_size, future_steps, hidden_size)
         
@@ -119,10 +124,3 @@ class RewardPredModel(nn.Module):
         rew_outputs = torch.cat(rew_outputs, dim=1)  # (batch_size, output_steps)
         
         return rew_outputs
-
-
-
-
-
-
-
