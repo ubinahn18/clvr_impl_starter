@@ -57,14 +57,7 @@ def get_image_channels_and_size(image):
     channels, height, width = image_tensor.shape
     
     return channels, height, width
-
     
-    def adjust_layers(self, img_size):
-        """Recompute the layers dynamically if input size is different."""
-        if len(self.layers) == 0 or img_size != 64:  # 64 is the default placeholder
-            self.layers = nn.ModuleList()
-            self.current_channels = 16
-            self.add_conv_layers(self.layers[0].in_channels if self.layers else 3)
 
 
 def get_feature_dim(img_size):
