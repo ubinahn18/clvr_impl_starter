@@ -78,8 +78,10 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
                 i += 1
 
 
-        samples = torch.cat(samples, dim=0)  # Shape: (total_samples, input_steps, H, W)
-        targets = torch.cat(targets, dim=0)  # Shape: (total_samples,)
+        samples = torch.cat(samples, dim=0) 
+        print(samples.shape)
+        targets = torch.cat(targets, dim=0) 
+        print(targets.shape)
         total_samples = samples.shape[0]
         perm = torch.randperm(total_samples)
         samples = samples[perm]
