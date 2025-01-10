@@ -99,7 +99,7 @@ class RewardPredModel(nn.Module):
         self.encoder = CNNEncoder(input_channels=1, img_size=img_size, initial_channels=4) 
         self.feature_dim = get_feature_dim(img_size)
         self.MLP = MLP(self.feature_dim, 64)        
-        self.PredictorLSTM = PredictorLSTM(64, hidden_size=10, num_layers=1, future_steps=20, batch_first=True)
+        self.LSTMPredictor = LSTMPredictor(64, hidden_size=10, num_layers=1, future_steps=20, batch_first=True)
         self.RewardHeads = nn.ModuleList([
             MLP(10, 1) for _ in range(reward_type_num)
         ])
