@@ -7,20 +7,6 @@ from models import CNNEncoder
 
 
 class Conv2D_params:
-    """Initialize the parameters of the model.
-    
-    Parameters:
-    ----------
-    dimn_tensor : list
-        size of the input data used for the model training.
-        [batch size, number of channels, N_frames, N_frames]
-    hidden_layers_list : list
-        list of channels in all comvolutional layers
-    ksize : int
-        size of the convolutional kernel
-    latent_space_dimn : int
-        number of latent variables
-    """
 
     def __init__(
         self,
@@ -40,22 +26,7 @@ class Conv2D_params:
 
 
 class Encoder_2D(nn.Module):
-    """
-    Class for encoder.
-    
-    Parameters:
-    ----------
-    dimn_tensor : list
-        size of the input data used for the model training.
-        [batch size, number of channels, N_frames, N_frames]
-    hidden_layers_list : list
-        list of channels in all comvolutional layers
-    ksize : int
-        size of the convolutional kernel
-    latent_space_dimn : int
-        number of latent variables
-    """
-    
+  
     def __init__(self, dimn_tensor, hidden_layers_list, ksize, latent_space_dimn):
 
         # Input tensors are ( batchsize , channels , nX , nY )
@@ -113,22 +84,6 @@ class Encoder_2D(nn.Module):
 
 
 class Decoder_2D(nn.Module):
-    """
-    Class for decoder.
-    
-    Parameters:
-    ----------
-    fc_outputsize : int
-        number of the parameters in the first layer of decoder
-    nX, nY : int, int
-        dimensions of the convolutional laers in decoder
-    channels_list: list
-        list of channels in each layer of the decoder
-    ksize : int
-        size of the convolutional kernel
-    latent_dimn : int
-        number of latent variables
-    """
     
     def __init__(self, latent_dimn, fc_outputsize, nX, nY, channels_list, ksize):
 
@@ -200,27 +155,12 @@ def get_decoder2d_fcoutputsize_from_encoder2d_params(
 
 
 class AutoEncoder_2D(nn.Module):
-    """Combination of Encoder_2D and Decoder_2D
-    
-    Parameters:
-    ----------
-    dimn_tensor : list
-        size of the input data used for the model training.
-        [batch size, number of channels, N_frames, N_frames]
-    hidden_layers_list : list
-        list of channels in all comvolutional layers
-    ksize : int
-        size of the convolutional kernel
-    latent_space_dimn : int
-        number of latent variables
-    
-    """
 
     def __init__(self, dimn_tensor, hidden_layers_list, ksize, latent_space_dimn):
 
         super(AutoEncoder_2D, self).__init__()
 
-        self.encoder = CNNEncoder(input_channels=1, img_size=img_size, initial_channels=4) 
+        self.encoder = CNNEncoder(input_channels=1, img_size, initial_channels=4) 
 
         fc_outputsize = get_decoder2d_fcoutputsize_from_encoder2d_params(
             self.encoder.conv2d_params.hidden_layers_list,
@@ -245,3 +185,63 @@ class AutoEncoder_2D(nn.Module):
     def get_latent_space_coordinates(self, x):
 
         return self.encoder(x)
+
+
+
+def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 40, epochs = 20, batch_size = 32, learning_rate = 0.005):
+
+    criterion = nn.MSELoss()
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+    losses = []
+    reward_type = ["AgentXReward", "AgentYReward", "TargetXReward", "TargetYReward"]
+
+    encoder = AutoEncoder_2D.encoder(img_size = img_size)
+    decoder = AutoEncoder_2D.forward()
+ 
+    for epoch in range(epochs):
+        epoch_loss = 0
+        model.train()
+
+        samples = []
+        targets = []
+
+        for _ in range(num_trajectories):
+            _, imgs = rollout_trajectory(env, num_steps)
+            i = 0
+            while i + input_steps + future_steps <= len(states):
+                img_seq = torch.tensor(imgs[i:i + input_steps], dtype=torch.float32) 
+                targets.append(img_seq.unsqueeze(0)) 
+                i += 1
+
+
+        samples = torch.cat(samples, dim=0) 
+        targets = torch.cat(targets, dim=0) 
+        total_samples = samples.shape[0]
+        perm = torch.randperm(total_samples)
+        samples = samples[perm]
+        targets = targets[perm]
+
+        # Process in batches
+        for batch_start in range(0, total_samples - total_samples % batch_size, batch_size):
+            batch_end = batch_start + batch_size
+            batch_samples = samples[batch_start:batch_end, :]
+            batch_targets = targets[batch_start:batch_end, :]
+
+
+            loss = criterion(predicted_rewards, batch_targets)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            epoch_loss += loss.item() * (batch_end - batch_start)
+
+        avg_loss = epoch_loss / total_samples
+        losses.append(avg_loss)
+        print(f"Epoch [{epoch + 1}/{epochs}], Loss: {avg_loss:.4f}")
+
+    return losses
+
+
+if __name__ == "__main__":
+    
