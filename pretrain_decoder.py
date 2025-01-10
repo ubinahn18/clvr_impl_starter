@@ -25,64 +25,6 @@ class Conv2D_params:
         self.latent_space_dimn = latent_space_dimn
 
 
-class Encoder_2D(nn.Module):
-  
-    def __init__(self, dimn_tensor, hidden_layers_list, ksize, latent_space_dimn):
-
-        # Input tensors are ( batchsize , channels , nX , nY )
-
-        super(Encoder_2D, self).__init__()
-
-        batchsize, channels, nX, nY = dimn_tensor
-
-        n_layers = len(hidden_layers_list) - 1
-
-        len_signal_conv_X = nX
-        len_signal_conv_Y = nY
-
-        # set up convolutional layers
-        self.f_conv = nn.ModuleList(
-            [
-                nn.Conv2d(
-                    hidden_layers_list[i],
-                    hidden_layers_list[i + 1],
-                    kernel_size=ksize[i],
-                    padding=(ksize[i] - 1) // 2,
-                )
-                for i in range(n_layers)
-            ]
-        )
-
-        for conv_i in self.f_conv:
-            nn.init.xavier_uniform_(conv_i.weight)
-
-        # set up linear outout layer
-        self.f_linear_out = nn.Linear(
-            len_signal_conv_X * len_signal_conv_Y * hidden_layers_list[-1],
-            latent_space_dimn,
-        )
-
-        nn.init.xavier_uniform_(self.f_linear_out.weight)
-
-        # Save some network parameters
-        self.conv2d_params = Conv2D_params(
-            dimn_tensor, hidden_layers_list, ksize, latent_space_dimn
-        )
-
-    def forward(self, x):
-        
-        #perform convolution and ReLU
-        for i, conv_i in enumerate(self.f_conv):
-            x = conv_i(x)
-            x = F.relu(x)
-            
-        #linear transformation ot the low diminsional latent space
-        batchsize, features, nX, nY = x.size()
-        x = self.f_linear_out(x.reshape(batchsize, 1, features * nX * nY))
-
-        return x
-
-
 class Decoder_2D(nn.Module):
     
     def __init__(self, latent_dimn, fc_outputsize, nX, nY, channels_list, ksize):
@@ -211,6 +153,9 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
             while i + input_steps + future_steps <= len(states):
                 img_seq = torch.tensor(imgs[i:i + input_steps], dtype=torch.float32) 
                 targets.append(img_seq.unsqueeze(0)) 
+                processed_img_seq = encoder.forward(img_seq)
+                processed_img_seq = decoder.forward(processed_img_seq)
+                samples.append(processed_img_seq)
                 i += 1
 
 
@@ -227,8 +172,7 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
             batch_samples = samples[batch_start:batch_end, :]
             batch_targets = targets[batch_start:batch_end, :]
 
-
-            loss = criterion(predicted_rewards, batch_targets)
+            loss = criterion(batch_samples, batch_targets)
 
             optimizer.zero_grad()
             loss.backward()
@@ -244,4 +188,4 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
 
 
 if __name__ == "__main__":
-    
+    env = 
