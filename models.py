@@ -79,16 +79,16 @@ class LSTMPredictor(nn.Module):
         seq_length = x.size(1)
         for t in range(seq_length):
             out, (h0, c0) = self.lstm(x[:, t:t+1, :], (h0, c0))
-            outputs.append(out)
+            outputs.append(torch.tensor(h0).squeeze())
 
         last_output = outputs[-1]
         for _ in range(self.future_steps):
             next_input = self.fc_out(last_output)
             out, (h0, c0) = self.lstm(next_input, (h0, c0))
-            last_output = self.fc_out(out)
-            outputs.append(out)
+            last_output = self.fc_out(torch.tensor(h0).squeeze())
+            outputs.append(torch.tensor(h0).squeeze())
 
-        outputs = outputs[:-seq_length]
+        outputs = outputs[:-(len(outputs-seq_length)]
         outputs = torch.cat(outputs, dim=1)
         return outputs
 
