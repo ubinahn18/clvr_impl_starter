@@ -78,17 +78,13 @@ class LSTMPredictor(nn.Module):
         outputs = []
         seq_length = x.size(1)
         for t in range(seq_length):
-            print(x[:, t:t+1, :].shape)
             out, (h0, c0) = self.lstm(x[:, t:t+1, :], (h0, c0))
-            print('h0', h0.shape)
             outputs.append(h0)
 
         last_output = outputs[-1]
 
         for _ in range(self.future_steps):
             next_input = self.fc_out(last_output)
-            print('last', last_output.shape)
-            print('next', next_input.shape)
             next_input = next_input.permute(1,0,2)
             out, (h0, c0) = self.lstm(next_input, (h0, c0))
             outputs.append(h0)
@@ -124,26 +120,20 @@ class RewardPredModel(nn.Module):
         # Encode each image in the sequence for all batches
         for i in range(self.input_steps):
             img_batch = img_seq[:, i, :, :].unsqueeze(1)  # (batch_size, input_steps, H, W)
-            print('a', img_batch.shape)
             encoded_img = self.encoder(img_batch).squeeze()  # (batch_size, feature_dim)
-            print('b', encoded_img.shape)
             input_feat = self.MLP(encoded_img)  # (batch_size, feature_dim)
-            print('c', input_feat.shape)
             pred_inputs.append(input_feat)
         
         pred_inputs = torch.stack(pred_inputs, dim=1)  # (batch_size, input_steps, feature_dim)
-        print('d', pred_inputs.shape)
 
         h0 = torch.zeros(1, 32, 10)
         c0 = torch.zeros(1, 32, 10)
 
         pred_outputs = self.LSTMPredictor(pred_inputs, h0, c0)  # (batch_size, future_steps, hidden_size)
-        print('yo' , pred_outputs.shape)
         rew_outputs = []
         for i in range(self.reward_type_num):
             rew_outputs.append(self.RewardHeads[i](pred_outputs))  # (batch_size, 1)
 
         rew_outputs = torch.stack(rew_outputs, dim=-1).squeeze()  # Shape: (32, 20, 4)
-        print(rew_outputs.shape) 
 
         return rew_outputs
