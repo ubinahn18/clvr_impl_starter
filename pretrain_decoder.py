@@ -3,7 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 import numpy as np
-from models import CNNEncoder
+import torch.optim as optim
+from models import *
+from sprites_env.envs.sprites import *
 
 
 class Conv2D_params:
