@@ -26,18 +26,28 @@ def rollout_trajectory(env, num_steps = 40):
 
 
 def traj_rewards(traj, reward_type):
+    import numpy as np
+    
+    # Define valid reward types and their corresponding indices
+    valid_reward_types = {
+        "AgentXReward": (0, 1),
+        "AgentYReward": (0, 0),
+        "TargetXReward": (1, 0),
+        "TargetYReward": (1, 1),
+    }
 
-    valid_reward_types = {"AgentXReward", "AgentYReward", "TargetXReward", "TargetYReward"}
-    assert reward_type in valid_reward_types, f"Invalid reward_type: {reward_type}. Must be one of {valid_reward_types}."
- 
-    if reward_type == "AgentXReward":
-        return trajectories[:, 0, 1]
-    elif reward_type == "AgentYReward":
-        return trajectories[:, 0, 0]
-    elif reward_type == "TargetXReward":
-        return trajectories[:, 1, 0]
-    elif reward_type == "TargetYReward":
-        return trajectories[:, 1, 1]
+    # Ensure reward_type is a list
+    if isinstance(reward_type, str):
+        reward_type = [reward_type]
+    
+    # Validate each reward type in the list
+    for rt in reward_type:
+        assert rt in valid_reward_types, f"Invalid reward_type: {rt}. Must be one of {set(valid_reward_types.keys())}."
+    
+    # Extract rewards based on reward_type and stack them
+    rewards = [traj[:, indices[0], indices[1]] for rt in reward_type for indices in [valid_reward_types[rt]]]
+    return np.stack(rewards, axis=-1)
+
  
 
 
@@ -46,7 +56,8 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
     criterion = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate)
     losses = []
-
+    reward_type = ["AgentXReward", "AgentYReward", "TargetXReward", "TargetYReward"]
+ 
     for epoch in range(epochs):
         epoch_loss = 0
         model.train()
@@ -56,7 +67,7 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
 
         for _ in range(num_trajectories):
             states, imgs = rollout_trajectory(env, num_steps)
-            rewards = traj_rewards(states)
+            rewards = traj_rewards(states, reward_type)
             i = 0
             while i + input_steps + future_steps <= len(states):
                 img_seq = torch.tensor(imgs[i:i + input_steps], dtype=torch.float32) 
