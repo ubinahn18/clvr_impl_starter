@@ -76,6 +76,7 @@ class SpritesEnv(gym.Env):
     def _clip(self, state):
         return np.clip(state, self._bounds[:, 0], self._bounds[:, 1])
 
+    # state is (pos,vel)
     def _forward(self, state):
         """ Assuming that state is [shape_idx, 4] for [position, velocity] """
         pos, vel = np.split(state, 2, -1)
@@ -94,6 +95,7 @@ class SpritesEnv(gym.Env):
         state = np.concatenate((pos, vel), -1)
         return state
 
+    # returns pos_state, state
     def forward(self, state):
         state = self._clip(state)
         state = self._clip(self._forward(state))
@@ -110,8 +112,8 @@ class SpritesEnv(gym.Env):
             min_value = self._bounds[np.newaxis, :, 0]
             max_value = self._bounds[np.newaxis, :, 1]
             span = max_value - min_value
-
             state = min_value + state * span
+            
         pos_state, self._state = self.forward(state)
         im = self._render(np.expand_dims(pos_state, 0), self.shapes).squeeze(0)
         return im / 255
@@ -119,6 +121,7 @@ class SpritesEnv(gym.Env):
     def seed(self, seed=None):
         np.random.seed(seed)
 
+    # this reward is given as agent-target distance or some modified version of that / returns image instead of raw state
     def step(self, action):
         vel = np.array(action) * self.max_speed
         state = self._state.copy()
@@ -176,7 +179,7 @@ class SpritesEnv(gym.Env):
 class SpritesStateEnv(SpritesEnv):
     def __init__(self, follow=True, **kwarg):
         super().__init__(follow=follow, **kwarg)
-        # only return pos_state
+        # only returns pos_state
         self.observation_space = Box(low=0.0, high=1.0,
                 shape=((self.n_distractors + 2) * self._n_dim, ),
                 dtype=np.float32)
@@ -191,6 +194,7 @@ class SpritesStateEnv(SpritesEnv):
         super().reset()
         return self._state[:, :self._n_dim].copy().flatten()
 
+    # returns raw state but only pos
     def step(self, action):
         _, reward, done, info = super().step(action)
         return self._state[:, :self._n_dim].copy().flatten(), reward, done, info
