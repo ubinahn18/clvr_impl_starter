@@ -223,7 +223,7 @@ class SpritesStateImgEnv(SpritesEnv):
     # returns img and raw pos
     def step(self, action):
         im, reward, done, info = super().step(action)
-        return im, self._state[:, :self._n_dim].copy().flatten(), reward, done, info
+        return im, self._state[:, :self._n_dim].copy(), reward, done, info
 
 
 
