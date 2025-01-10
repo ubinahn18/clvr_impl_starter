@@ -186,8 +186,16 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
         losses.append(avg_loss)
         print(f"Epoch [{epoch + 1}/{epochs}], Loss: {avg_loss:.4f}")
 
+    torch.save(encoder.state_dict(), "encoders.pth")
+    torch.save(decoder.state_dict(), "decoders.pth")
+
     return losses
 
 
 if __name__ == "__main__":
+    env = SpritesStateImgEnv()
+    train_Encoder_Decoder(env, num_trajectories=50, num_steps=100, epochs=10, batch_size=32, learning_rate=0.01)
+    
+    
+
     
