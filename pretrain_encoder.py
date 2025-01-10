@@ -5,7 +5,7 @@ from models import *
 from sprites_env.envs.sprites import *
 
 
-def rollout_trajectory(env, num_steps = 50):
+def rollout_trajectory(env, num_steps = 40):
  
     states = []
     imgs = []
@@ -24,23 +24,21 @@ def rollout_trajectory(env, num_steps = 50):
     return np.array(states), np.array(imgs)
 
 
-def traj_rewards(traj):
+
+def traj_rewards(traj, reward_type):
+
+    valid_reward_types = {"AgentXReward", "AgentYReward", "TargetXReward", "TargetYReward"}
+    assert reward_type in valid_reward_types, f"Invalid reward_type: {reward_type}. Must be one of {valid_reward_types}."
  
-    rewards = []
-
-    for _ in range(num_steps):
-        action = env.action_space.sample()
-        next_img, next_state, _, done, _ = env.step(action)
-
-        states.append(next_state)
-        imgs.append(next_img)
-
-        if done:
-            break
-
-    return np.array(states), np.array(imgs)
+    if reward_type == "AgentXReward":
+        return trajectories[:, 0, 1]
+    elif reward_type == "AgentYReward":
+        return trajectories[:, 0, 0]
+    elif reward_type == "TargetXReward":
+        return trajectories[:, 1, 0]
+    elif reward_type == "TargetYReward":
+        return trajectories[:, 1, 1]
  
-
 
 
 def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 3, future_steps = 20, epochs = 20, batch_size = 32, learning_rate = 0.005):
@@ -57,17 +55,18 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
         targets = []
 
         for _ in range(num_trajectories):
-            states, imgs, rewards = rollout_trajectory(env, num_steps)
+            states, imgs = rollout_trajectory(env, num_steps)
+            rewards = traj_rewards(states)
             i = 0
             while i + input_steps + future_steps <= len(states):
                 img_seq = torch.tensor(imgs[i:i + input_steps], dtype=torch.float32) 
                 future_reward_seq = torch.tensor(rewards[i + input_steps : i + input_steps + future_steps], dtype=torch.float32) 
-                samples.append(img_seq.unsqueeze(0))  # Add batch dimension
-                targets.append(reward_sum.unsqueeze(0))
-                i += 1  # Increment to move to the next sample
+                # unsqueeze to add batch dimension
+                samples.append(img_seq.unsqueeze(0)) 
+                targets.append(rewards.unsqueeze(0))
+                i += 1
 
 
-        # Shuffle data
         samples = torch.cat(samples, dim=0)  # Shape: (total_samples, input_steps, H, W)
         targets = torch.cat(targets, dim=0)  # Shape: (total_samples,)
         total_samples = samples.shape[0]
@@ -78,14 +77,12 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
         # Process in batches
         for batch_start in range(0, total_samples, batch_size):
             batch_end = min(batch_start + batch_size, total_samples)
-            batch_samples = samples[batch_start:batch_end].unsqueeze(1)
-            print(batch_samples.shape)
-            batch_targets = targets[batch_start:batch_end]
+            batch_samples = samples[batch_start:batch_end,:]
+            # print(batch_samples.shape)
+            batch_targets = targets[batch_start:batch_end,:]
 
-            # Forward pass
-            predicted_rewards = model(batch_samples).sum(dim=1)  # Predicted sum of rewards per sample
+            predicted_rewards = model(batch_samples)
 
-            # Compute loss
             loss = criterion(predicted_rewards, batch_targets)
 
             # Backward pass and optimization
