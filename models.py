@@ -102,7 +102,7 @@ class RewardPredModel(nn.Module):
         self.MLP = MLP(self.feature_dim, 64)        
         self.LSTMPredictor = LSTMPredictor(64, hidden_size=10, num_layers=1, future_steps=20)
         self.RewardHeads = nn.ModuleList([
-            MLP(10, 1) for _ in range(reward_type_num)
+            MLP(10, 1) for _ in range(self.reward_type_num)
         ])
         self.input_steps = input_steps
         self.output_steps = output_steps
