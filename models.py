@@ -66,16 +66,31 @@ def get_feature_dim(img_size):
     return feature_dim
 
 
-class PredictorLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, future_steps, batch_first=True):
-        super(PredictorLSTM, self).__init__()
+class LSTMPredictor(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, output_size):
+        super(LSTMPredictor, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-
-    def forward(self, x):
-        outputs = []
-        h, (hidden, cell) = self.lstm(x)  # Encode input sequence
+        self.fc_out = nn.Linear(hidden_size, input_size)  
     
-        return h
+    def forward(self, x, h0, c0, future_steps):
+        # Unroll for input sequence
+        outputs = []
+        seq_length = x.size(1)
+        for t in range(seq_length):
+            out, (h0, c0) = self.lstm(x[:, t:t+1, :], (h0, c0))
+            outputs.append(self.fc_out(out))
+
+        last_output = outputs[-1]
+        for _ in range(future_steps):
+            next_input = last_output
+            out, (h0, c0) = self.lstm(next_input, (h0, c0))
+            last_output = self.fc_out(out)
+            outputs.append(last_output)
+
+        outputs = torch.cat(outputs, dim=1)
+        return outputs
+
+        
 
 
 class RewardPredModel(nn.Module):
@@ -87,7 +102,7 @@ class RewardPredModel(nn.Module):
         ])
         self.feature_dim = get_feature_dim(img_size)
         self.MLP = MLP(self.feature_dim, 64)        
-        self.PredictorLSTM = PredictorLSTM(64, hidden_size=20, num_layers=1, future_steps=20, batch_first=True)
+        self.PredictorLSTM = PredictorLSTM(64, hidden_size=10, num_layers=1, future_steps=20, batch_first=True)
         self.RewardHeads = nn.ModuleList([
             MLP(20, 1) for _ in range(output_steps)
         ])
