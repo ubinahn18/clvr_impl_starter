@@ -194,10 +194,11 @@ class SpritesStateEnv(SpritesEnv):
         super().reset()
         return self._state[:, :self._n_dim].copy().flatten()
 
-    # returns img and raw pos
+    # returns raw state but only pos
     def step(self, action):
-        im, reward, done, info = super().step(action)
-        return im, self._state[:, :self._n_dim].copy().flatten(), reward, done, info
+        _, reward, done, info = super().step(action)
+        return self._state[:, :self._n_dim].copy().flatten(), reward, done, info
+
 
 
 
@@ -219,10 +220,10 @@ class SpritesStateImgEnv(SpritesEnv):
         super().reset()
         return self._state[:, :self._n_dim].copy().flatten()
 
-    # returns raw state but only pos
+    # returns img and raw pos
     def step(self, action):
-        _, reward, done, info = super().step(action)
-        return self._state[:, :self._n_dim].copy().flatten(), reward, done, info
+        im, reward, done, info = super().step(action)
+        return im, self._state[:, :self._n_dim].copy().flatten(), reward, done, info
 
 
 
