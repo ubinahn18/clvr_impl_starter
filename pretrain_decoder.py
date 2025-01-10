@@ -123,11 +123,9 @@ class AutoEncoder_2D(nn.Module):
         )
 
     def forward(self, x):
-
         return self.decoder(self.encoder(x))
 
     def get_latent_space_coordinates(self, x):
-
         return self.encoder(x)
 
 
@@ -144,7 +142,8 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
  
     for epoch in range(epochs):
         epoch_loss = 0
-        model.train()
+        encoder.train()
+        decoder.train()
 
         samples = []
         targets = []
@@ -160,7 +159,6 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
                 samples.append(processed_img_seq)
                 i += 1
 
-
         samples = torch.cat(samples, dim=0) 
         targets = torch.cat(targets, dim=0) 
         total_samples = samples.shape[0]
@@ -168,7 +166,6 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
         samples = samples[perm]
         targets = targets[perm]
 
-        # Process in batches
         for batch_start in range(0, total_samples - total_samples % batch_size, batch_size):
             batch_end = batch_start + batch_size
             batch_samples = samples[batch_start:batch_end, :]
