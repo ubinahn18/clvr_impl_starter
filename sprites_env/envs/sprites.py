@@ -194,10 +194,36 @@ class SpritesStateEnv(SpritesEnv):
         super().reset()
         return self._state[:, :self._n_dim].copy().flatten()
 
+    # returns img and raw pos
+    def step(self, action):
+        im, reward, done, info = super().step(action)
+        return im, self._state[:, :self._n_dim].copy().flatten(), reward, done, info
+
+
+
+class SpritesStateImgEnv(SpritesEnv):
+    def __init__(self, follow=True, **kwarg):
+        super().__init__(follow=follow, **kwarg)
+        # only returns pos_state
+        self.observation_space = Box(low=0.0, high=1.0,
+                shape=((self.n_distractors + 2) * self._n_dim, ),
+                dtype=np.float32)
+
+    def set_config(self, spec):
+        super().set_config(spec)
+        self.observation_space = Box(low=0.0, high=1.0,
+                shape=((self.n_distractors + 2) * self._n_dim, ),
+                dtype=np.float32)
+
+    def reset(self):
+        super().reset()
+        return self._state[:, :self._n_dim].copy().flatten()
+
     # returns raw state but only pos
     def step(self, action):
         _, reward, done, info = super().step(action)
         return self._state[:, :self._n_dim].copy().flatten(), reward, done, info
+
 
 
 class SpritesRepelEnv(SpritesEnv):
