@@ -220,9 +220,7 @@ class AutoEncoder_2D(nn.Module):
 
         super(AutoEncoder_2D, self).__init__()
 
-        self.encoder = Encoder_2D(
-            dimn_tensor, hidden_layers_list, ksize, latent_space_dimn
-        )
+        self.encoder = CNNEncoder(input_channels=1, img_size=img_size, initial_channels=4) 
 
         fc_outputsize = get_decoder2d_fcoutputsize_from_encoder2d_params(
             self.encoder.conv2d_params.hidden_layers_list,
