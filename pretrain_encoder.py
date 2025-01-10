@@ -74,7 +74,7 @@ def train_model(env, model, num_trajectories = 5, num_steps = 40, input_steps = 
                 future_reward_seq = torch.tensor(rewards[i + input_steps : i + input_steps + future_steps], dtype=torch.float32) 
                 # unsqueeze to add batch dimension
                 samples.append(img_seq.unsqueeze(0)) 
-                targets.append(rewards.unsqueeze(0))
+                targets.append(future_reward_seq.unsqueeze(0))
                 i += 1
 
 
