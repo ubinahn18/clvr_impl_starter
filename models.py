@@ -67,12 +67,13 @@ def get_feature_dim(img_size):
 
 
 class LSTMPredictor(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
+    def __init__(self, input_size, hidden_size, num_layers, future_steps):
         super(LSTMPredictor, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.fc_out = nn.Linear(hidden_size, input_size)  
+        self.future_steps = future_steps
     
-    def forward(self, x, h0, c0, future_steps):
+    def forward(self, x, h0, c0):
         # Unroll for input sequence
         outputs = []
         seq_length = x.size(1)
@@ -81,7 +82,7 @@ class LSTMPredictor(nn.Module):
             outputs.append(self.fc_out(out))
 
         last_output = outputs[-1]
-        for _ in range(future_steps):
+        for _ in range(self.future_steps):
             next_input = last_output
             out, (h0, c0) = self.lstm(next_input, (h0, c0))
             last_output = self.fc_out(out)
