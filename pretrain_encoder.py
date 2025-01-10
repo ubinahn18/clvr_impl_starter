@@ -118,10 +118,10 @@ if __name__ == "__main__":
         obj_size=0.2,       # size of objects, full images is 1.0
         follow=True,
     )
-
+    reward_type = ["AgentXReward", "AgentYReward", "TargetXReward", "TargetYReward"]
 
     env = SpritesStateImgEnv()
-    model = RewardPredModel(input_channels=1, img_size=64, input_steps=3, output_steps=20)
+    model = RewardPredModel(reward_type, input_channels=1, img_size=64, input_steps=3, output_steps=20)
     train_model(env, model, num_trajectories=50, num_steps=100, input_steps=3, future_steps=20, epochs=10, batch_size=32, learning_rate=0.01)
     torch.save(model.encoders.state_dict(), "encoders.pth")
 
