@@ -93,7 +93,7 @@ class LSTMPredictor(nn.Module):
         
 
 class RewardPredModel(nn.Module):
-    def __init__(self, input_channels=1, img_size=64, input_steps=3, output_steps=20, reward_types):
+    def __init__(self, reward_types, input_channels=1, img_size=64, input_steps=3, output_steps=20):
         super(RewardPredModel, self).__init__()
         self.reward_type_num = len(reward_types)
         self.encoder = CNNEncoder(input_channels=1, img_size=img_size, initial_channels=4) 
