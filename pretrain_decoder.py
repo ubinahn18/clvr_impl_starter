@@ -190,4 +190,4 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
 
 
 if __name__ == "__main__":
-    env = 
+    
