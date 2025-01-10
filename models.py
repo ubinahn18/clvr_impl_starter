@@ -78,19 +78,28 @@ class LSTMPredictor(nn.Module):
         outputs = []
         seq_length = x.size(1)
         for t in range(seq_length):
+            print(x[:, t:t+1, :].shape)
             out, (h0, c0) = self.lstm(x[:, t:t+1, :], (h0, c0))
-            outputs.append(torch.tensor(h0).squeeze())
+            print('h0', h0.shape)
+            outputs.append(h0)
 
         last_output = outputs[-1]
+
         for _ in range(self.future_steps):
             next_input = self.fc_out(last_output)
+            print('last', last_output.shape)
+            print('next', next_input.shape)
+            next_input = next_input.permute(1,0,2)
             out, (h0, c0) = self.lstm(next_input, (h0, c0))
-            last_output = self.fc_out(torch.tensor(h0).squeeze())
-            outputs.append(torch.tensor(h0).squeeze())
+            outputs.append(h0)
+            last_output = outputs[-1]
 
-        outputs = outputs[:-(len(outputs-seq_length)]
-        outputs = torch.cat(outputs, dim=1)
+        outputs = outputs[seq_length : seq_length + self.future_steps]
+        outputs = torch.cat(outputs, dim=0)  # Shape: (20, 32, 10)
+        outputs = outputs.permute(1, 0, 2)  # Shape: (32, 20, 10)
+
         return outputs
+
 
         
 
@@ -134,6 +143,7 @@ class RewardPredModel(nn.Module):
         for i in range(self.reward_type_num):
             rew_outputs.append(self.RewardHeads[i](pred_outputs))  # (batch_size, 1)
 
-        rew_outputs = torch.cat(rew_outputs, dim=1).squeeze()  # (batch_size, output_steps)
-        
+        rew_outputs = torch.stack(rew_outputs, dim=-1).squeeze()  # Shape: (32, 20, 4)
+        print(rew_outputs.shape) 
+
         return rew_outputs
