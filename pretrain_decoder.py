@@ -133,12 +133,14 @@ class AutoEncoder_2D(nn.Module):
 def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 40, epochs = 20, batch_size = 32, learning_rate = 0.005):
 
     criterion = nn.MSELoss()
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+    
     losses = []
-    reward_type = ["AgentXReward", "AgentYReward", "TargetXReward", "TargetYReward"]
 
     encoder = AutoEncoder_2D.encoder(img_size = img_size)
     decoder = AutoEncoder_2D.forward()
+
+    optimizer_encoder = optim.SGD(encoder.parameters(), lr=learning_rate)
+    optimizer_decoder = optim.SGD(decoder.parameters(), lr=learning_rate)
  
     for epoch in range(epochs):
         epoch_loss = 0
@@ -173,9 +175,11 @@ def train_Encoder_Decoder(env, img_size = 64, num_trajectories = 5, num_steps = 
 
             loss = criterion(batch_samples, batch_targets)
 
-            optimizer.zero_grad()
+            optimizer_encoder.zero_grad()
+            optimizer_decoder.zero_grad()
             loss.backward()
-            optimizer.step()
+            optimizer_encoder.step()
+            optimizer_decoder.step()
 
             epoch_loss += loss.item() * (batch_end - batch_start)
 
